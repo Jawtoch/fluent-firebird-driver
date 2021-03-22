@@ -6,6 +6,7 @@
 //
 
 @_exported import FluentKit
+@_exported import FirebirdKit
 @_exported import FluentSQL
 
 extension DatabaseID {

@@ -20,6 +20,7 @@ let package = Package(
             name: "FluentFirebirdDriver",
             dependencies: [
 				.product(name: "FluentKit", package: "fluent-kit"),
+				.product(name: "FluentSQL", package: "fluent-kit"),
 				.product(name: "FirebirdKit", package: "firebird-kit"),
 			]),
         .testTarget(
