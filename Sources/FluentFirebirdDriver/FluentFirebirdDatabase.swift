@@ -87,17 +87,14 @@ private struct FirebirdDatabaseOutput: DatabaseOutput {
 	let decoder: FirebirdDecoder
 	
 	func schema(_ schema: String) -> DatabaseOutput {
-		print("schema \(schema)")
 		return _SchemaDatabaseOutput(output: self, schema: schema)
 	}
 	
 	func contains(_ key: FieldKey) -> Bool {
-		print("contains \(key)")
 		return self.row.values.keys.contains(self.columnName(key))
 	}
 	
 	func decodeNil(_ key: FieldKey) throws -> Bool {
-		print("decodeNil \(key)")
 		if let data = self.row.values[self.columnName(key)] {
 			return data.value == nil
 		}
@@ -106,7 +103,6 @@ private struct FirebirdDatabaseOutput: DatabaseOutput {
 	}
 	
 	func decode<T>(_ key: FieldKey, as type: T.Type) throws -> T where T : Decodable {
-		print("decode \(key)")
 		let column = self.columnName(key)
 		
 		guard let data = self.row.values[column] else {
@@ -116,7 +112,7 @@ private struct FirebirdDatabaseOutput: DatabaseOutput {
 		return try self.decoder.decode(T.self, from: data)
 	}
 	
-	var description: String { "" }
+	var description: String { row.values.description }
 	
 	func columnName(_ key: FieldKey) -> String {
 		switch key {
