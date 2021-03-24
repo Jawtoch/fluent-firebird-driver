@@ -35,13 +35,13 @@ extension FluentFirebirdDatabase: Database {
 	public func execute(schema: DatabaseSchema) -> EventLoopFuture<Void> {
 		print(schema)
 		fatalError("unsupported")
-		return self.eventLoop.makeSucceededVoidFuture()
+//		return self.eventLoop.makeSucceededVoidFuture()
 	}
 	
 	public func execute(enum: DatabaseEnum) -> EventLoopFuture<Void> {
 		print(`enum`)
 		fatalError("unsupported")
-		return self.eventLoop.makeSucceededVoidFuture()
+//		return self.eventLoop.makeSucceededVoidFuture()
 	}
 	
 	public func transaction<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
