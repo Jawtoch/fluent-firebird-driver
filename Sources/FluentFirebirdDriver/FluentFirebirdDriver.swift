@@ -28,7 +28,7 @@ public struct FluentFirebirdDriver: DatabaseDriver {
 
 extension EventLoopConnectionPool where Source == FirebirdConnectionSource {
 
-	public func database(logger: Logger) -> FirebirdDatabase {
+	public func database(logger: Logger) -> FirebirdNIODatabase {
 		return EventLoopConnectionPoolFirebirdDatabase(pool: self, logger: logger)
 	}
 }
@@ -40,18 +40,30 @@ private struct EventLoopConnectionPoolFirebirdDatabase {
 }
 
 
-extension EventLoopConnectionPoolFirebirdDatabase: FirebirdDatabase {
+extension EventLoopConnectionPoolFirebirdDatabase: FirebirdNIODatabase {
+	func withConnection<T>(_ closure: @escaping (FirebirdNIOConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+		return self.pool.withConnection(logger: self.logger, closure)
+	}
+	
+	func simpleQuery(_ query: String, _ binds: [FirebirdData]) -> EventLoopFuture<Void> {
+		self.pool.withConnection(logger: self.logger) { conn in
+			conn.simpleQuery(query, binds)
+		}
+	}
+	
+	func query(_ query: String, _ binds: [FirebirdData]) -> EventLoopFuture<[FirebirdRow]> {
+		self.pool.withConnection(logger: self.logger) { conn in
+			conn.query(query, binds)
+		}
+	}
+	
+	func query(_ query: String, _ binds: [FirebirdData], onRow: @escaping (FirebirdRow) throws -> Void) -> EventLoopFuture<Void> {
+		self.pool.withConnection(logger: self.logger) { conn in
+			conn.query(query, binds, onRow: onRow)
+		}
+	}
+	
 	var eventLoop: EventLoop {
 		self.pool.eventLoop
-	}
-
-	func withConnection<T>(_ closure: @escaping (FirebirdConnection) -> Future<T>) -> Future<T> {
-		self.pool.withConnection(logger: self.logger, closure)
-	}
-
-	func query(_ string: String, _ binds: [FirebirdData], onMetadata: @escaping (FirebirdQueryMetadata) -> Void, onRow: @escaping (FirebirdRow) throws -> Void) -> Future<Void> {
-		self.pool.withConnection(logger: self.logger) { conn in
-			conn.query(string, binds, onMetadata: onMetadata, onRow: onRow)
-		}
 	}
 }

@@ -6,9 +6,9 @@
 //
 
 public struct FluentFirebirdDatabase {
-	public let database: FirebirdDatabase
+	public let database: FirebirdNIODatabase
 	public let context: DatabaseContext
-	public let configuration: FirebirdDatabaseConfiguration
+	public let configuration: FirebirdConnectionConfiguration
 	public let inTransaction: Bool
 }
 
@@ -21,11 +21,8 @@ extension FluentFirebirdDatabase: Database {
 		let (sql, binds) = database.serialize(expression)
 		
 		do {
-			let results = self.database.query(sql, try binds.map { try database.encoder.encode($0) })
-			return results.map { results in
-				for row in results.rows {
-					onOutput(FirebirdDatabaseOutput(row: row, decoder: database.decoder))
-				}
+			return self.database.query(sql, try binds.map { try database.encoder.encode($0) }) { row in
+				onOutput(FirebirdDatabaseOutput(row: row, decoder: database.decoder))
 			}
 		} catch {
 			return self.eventLoop.makeFailedFuture(error)
@@ -50,23 +47,16 @@ extension FluentFirebirdDatabase: Database {
 		}
 		
 		return self.database.withConnection { conn in
-			conn.startTransaction(on: conn).flatMap { transaction in
-				let db = FluentFirebirdDatabase(
-					database: conn,
-					context: self.context,
-					configuration: self.configuration,
-					inTransaction: true)
-				
-				return closure(db).flatMap { result in
-					conn.commitTransaction(transaction).map { _ in
-						result
-					}
-					.flatMapError { error in
-						conn.rollbackTransaction(transaction).flatMapThrowing { _ in
-							throw error
-						}
-					}
-				}
+			let transaction = try! conn.connection.startTransaction(on: conn.connection)
+			let db = FluentFirebirdDatabase(
+				database: conn,
+				context: self.context,
+				configuration: self.configuration,
+				inTransaction: true)
+			
+			return closure(db).map { result in
+				try! conn.connection.commitTransaction(transaction)
+				return result
 			}
 		}
 	}

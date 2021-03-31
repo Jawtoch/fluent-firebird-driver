@@ -7,12 +7,12 @@
 
 public struct FluentFirebirdConfiguration: DatabaseConfiguration {
 	
-	public let configuration: FirebirdDatabaseConfiguration
+	public let configuration: FirebirdConnectionConfiguration
 	
 	public var middleware: [AnyModelMiddleware] = []
 	
 	public func makeDriver(for databases: Databases) -> DatabaseDriver {
-		let db = FirebirdConnectionSource(self.configuration)
+		let db = FirebirdConnectionSource(configuration: self.configuration)
 		let poolGroup = EventLoopGroupConnectionPool(source: db, on: databases.eventLoopGroup)
 		
 		return FluentFirebirdDriver(poolGroup: poolGroup)
@@ -29,7 +29,7 @@ extension DatabaseConfigurationFactory {
 		database: String) -> DatabaseConfigurationFactory {
 		return DatabaseConfigurationFactory {
 			FluentFirebirdConfiguration(
-				configuration: FirebirdDatabaseConfiguration(
+				configuration: FirebirdConnectionConfiguration(
 					hostname: hostname,
 					port: port,
 					username: username,
