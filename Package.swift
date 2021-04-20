@@ -13,7 +13,7 @@ let package = Package(
     ],
     dependencies: [
 		.package(url: "https://github.com/vapor/fluent-kit.git", from: "1.0.0"),
-		.package(name: "firebird-kit", path: "../firebird-kit")
+		.package(url: "https://github.com/Jawtoch/firebird-kit.git", .upToNextMajor(from: "0.0.0")),
     ],
     targets: [
         .target(
