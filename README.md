@@ -1,3 +1,3 @@
-# FluentFirebirdDriver
+# Fluent Firebird Driver
 
-A description of this package.
+Firebird database driver for Vapor Fluent
