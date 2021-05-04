@@ -41,17 +41,9 @@ extension FluentFirebirdDatabase: Database {
 			return closure(self)
 		}
 		
-		return self.database.withConnection { conn in
-			let transaction = try! conn.connection.startTransaction(on: conn.connection)
-			let db = FluentFirebirdDatabase(
-				database: conn,
-				context: self.context,
-				inTransaction: true)
-			
-			return closure(db).map { result in
-				try! conn.connection.commitTransaction(transaction)
-				return result
-			}
+		return self.database.withTransaction { conn in
+			let db = FluentFirebirdDatabase(database: conn, context: self.context, inTransaction: true)
+			return closure(db)
 		}
 	}
 	

@@ -27,6 +27,14 @@ struct _ConnectionPoolFirebirdDatabase {
 }
 
 extension _ConnectionPoolFirebirdDatabase: FirebirdNIODatabase {
+	func withTransaction<T>(_ closure: @escaping ((FirebirdNIOConnection) -> EventLoopFuture<T>)) -> EventLoopFuture<T> {
+		self.withConnection {
+			$0.withTransaction {
+				closure($0)
+			}
+		}
+	}
+	
 	var eventLoop: EventLoop {
 		self.pool.eventLoop
 	}
