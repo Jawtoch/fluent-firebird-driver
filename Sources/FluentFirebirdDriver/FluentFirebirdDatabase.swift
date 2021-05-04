@@ -16,16 +16,12 @@ extension FluentFirebirdDatabase: Database {
 	public func execute(query: DatabaseQuery, onOutput: @escaping (DatabaseOutput) -> ()) -> EventLoopFuture<Void> {
 		let expression = SQLQueryConverter(delegate: FirebirdConverterDelegate()).convert(query)
 		
-		let database = FirebirdSQLDatabase(database: self.database)
-		
-		let (sql, binds) = database.serialize(expression)
-		
-		do {
-			return self.database.query(sql, try binds.map { try database.encoder.encode($0) }) { row in
-				onOutput(FirebirdDatabaseOutput(row: row, decoder: database.decoder))
+		let sqlDatabase = FirebirdSQLDatabase(database: self.database)
+			
+		return sqlDatabase.execute(sql: expression) { sqlRow in
+			if let row = sqlRow as? FirebirdSQLRow {
+				onOutput(FirebirdDatabaseOutput(row: row.row, decoder: sqlDatabase.decoder))
 			}
-		} catch {
-			return self.eventLoop.makeFailedFuture(error)
 		}
 	}
 	
