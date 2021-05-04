@@ -41,7 +41,8 @@ extension _ConnectionPoolFirebirdDatabase: FirebirdNIODatabase {
 	
 	func withConnection<T>(_ closure: @escaping (FirebirdNIOConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
 		self.pool.withConnection(logger: self.logger) {
-			closure($0)
+			self.logger.critical("\($0) JE L'AI")
+			return closure($0)
 		}
 	}
 	
