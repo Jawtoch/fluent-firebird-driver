@@ -1,7 +1,3 @@
-//import AsyncKit
-//import FirebirdNIO
-//
-
 public struct FluentFirebirdDriver: DatabaseDriver {
 	public let pool: EventLoopGroupConnectionPool<FirebirdConnectionSource>
 
@@ -41,7 +37,6 @@ extension _ConnectionPoolFirebirdDatabase: FirebirdNIODatabase {
 	
 	func withConnection<T>(_ closure: @escaping (FirebirdNIOConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
 		self.pool.withConnection(logger: self.logger) {
-			self.logger.critical("\($0) JE L'AI")
 			return closure($0)
 		}
 	}
