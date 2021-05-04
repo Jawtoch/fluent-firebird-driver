@@ -8,7 +8,6 @@
 public struct FluentFirebirdDatabase {
 	public let database: FirebirdNIODatabase
 	public let context: DatabaseContext
-	public let configuration: FirebirdConnectionConfiguration
 	public let inTransaction: Bool
 }
 
@@ -47,7 +46,6 @@ extension FluentFirebirdDatabase: Database {
 			let db = FluentFirebirdDatabase(
 				database: conn,
 				context: self.context,
-				configuration: self.configuration,
 				inTransaction: true)
 			
 			return closure(db).map { result in
@@ -62,7 +60,6 @@ extension FluentFirebirdDatabase: Database {
 			closure(FluentFirebirdDatabase(
 						database: self.database,
 						context: self.context,
-						configuration: self.configuration,
 						inTransaction: self.inTransaction))
 		}
 	}

@@ -3,67 +3,55 @@
 //
 
 public struct FluentFirebirdDriver: DatabaseDriver {
-	
-	public let poolGroup: EventLoopGroupConnectionPool<FirebirdConnectionSource>
+	public let pool: EventLoopGroupConnectionPool<FirebirdConnectionSource>
+
+	var eventLoopGroup: EventLoopGroup {
+		self.pool.eventLoopGroup
+	}
 	
 	public func makeDatabase(with context: DatabaseContext) -> Database {
-		let pool = self.poolGroup.pool(for: context.eventLoop)
-		let configuration = self.poolGroup.source.configuration
-		let database = pool.database(logger: context.logger)
-		
-		
-		return FluentFirebirdDatabase(
-			database: database,
+		FluentFirebirdDatabase(
+			database: _ConnectionPoolFirebirdDatabase(pool: self.pool.pool(for: context.eventLoop), logger: context.logger),
 			context: context,
-			configuration: configuration,
 			inTransaction: false)
 	}
 	
 	public func shutdown() {
-		self.poolGroup.shutdown()
-	}
-	
-	
-}
-
-extension EventLoopConnectionPool where Source == FirebirdConnectionSource {
-
-	public func database(logger: Logger) -> FirebirdNIODatabase {
-		return EventLoopConnectionPoolFirebirdDatabase(pool: self, logger: logger)
+		self.pool.shutdown()
 	}
 }
 
-private struct EventLoopConnectionPoolFirebirdDatabase {
+struct _ConnectionPoolFirebirdDatabase {
 	let pool: EventLoopConnectionPool<FirebirdConnectionSource>
 	let logger: Logger
-	var transaction: FirebirdTransaction? = nil
 }
 
-
-extension EventLoopConnectionPoolFirebirdDatabase: FirebirdNIODatabase {
+extension _ConnectionPoolFirebirdDatabase: FirebirdNIODatabase {
+	var eventLoop: EventLoop {
+		self.pool.eventLoop
+	}
+	
 	func withConnection<T>(_ closure: @escaping (FirebirdNIOConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-		return self.pool.withConnection(logger: self.logger, closure)
+		self.pool.withConnection(logger: self.logger) {
+			closure($0)
+		}
 	}
 	
 	func simpleQuery(_ query: String, _ binds: [FirebirdData]) -> EventLoopFuture<Void> {
-		self.pool.withConnection(logger: self.logger) { conn in
-			conn.simpleQuery(query, binds)
+		self.withConnection {
+			$0.simpleQuery(query, binds)
 		}
 	}
 	
 	func query(_ query: String, _ binds: [FirebirdData]) -> EventLoopFuture<[FirebirdRow]> {
-		self.pool.withConnection(logger: self.logger) { conn in
-			conn.query(query, binds)
+		self.withConnection {
+			$0.query(query, binds)
 		}
 	}
 	
 	func query(_ query: String, _ binds: [FirebirdData], onRow: @escaping (FirebirdRow) throws -> Void) -> EventLoopFuture<Void> {
-		self.pool.withConnection(logger: self.logger) { conn in
-			conn.query(query, binds, onRow: onRow)
+		self.withConnection {
+			$0.query(query, binds, onRow: onRow)
 		}
-	}
-	
-	var eventLoop: EventLoop {
-		self.pool.eventLoop
 	}
 }

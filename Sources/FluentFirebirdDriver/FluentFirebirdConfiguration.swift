@@ -15,7 +15,7 @@ public struct FluentFirebirdConfiguration: DatabaseConfiguration {
 		let db = FirebirdConnectionSource(configuration: self.configuration)
 		let poolGroup = EventLoopGroupConnectionPool(source: db, on: databases.eventLoopGroup)
 		
-		return FluentFirebirdDriver(poolGroup: poolGroup)
+		return FluentFirebirdDriver(pool: poolGroup)
 	}
 }
 
