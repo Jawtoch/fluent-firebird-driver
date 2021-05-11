@@ -96,7 +96,11 @@ final class FluentFirebirdDriverTests: XCTestCase {
 		XCTAssertEqual(employee.firstName, "Roberto")
 	}
 	
-	static var allTests: [(String, (FluentFirebirdDriverTests) -> ())] = []
+	static var allTests = [
+		("testConnect", testConnect),
+		("testQuery", testQuery),
+		("testQueryWithParameters", testQueryWithParameters)
+	]
 }
 
 class Employee: Model {
