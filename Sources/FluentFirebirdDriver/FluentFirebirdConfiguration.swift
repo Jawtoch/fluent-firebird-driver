@@ -21,6 +21,12 @@ public struct FluentFirebirdConfiguration: DatabaseConfiguration {
 
 extension DatabaseConfigurationFactory {
 	
+	public static func firebird(_ configuration: FirebirdConnectionConfiguration) -> DatabaseConfigurationFactory {
+		return DatabaseConfigurationFactory {
+			FluentFirebirdConfiguration(configuration: configuration)
+		}
+	}
+	
 	public static func firebird(
 		hostname: String,
 		port: UInt16? = FirebirdDatabaseHost.defaultPort,
