@@ -69,11 +69,24 @@ fileprivate final class Employee: Model, CustomStringConvertible {
 
 final class FirebirdFluentDriverTests: XCTAsyncTests {
 	
-	let logger = Logger(label: "firebirdfluentdriver.tests")
+	var logger: Logger {
+		var _logger = Logger(label: "firebirdfluentdriver.tests")
+		_logger.logLevel = .trace
+		return _logger
+	}
 	
 	let decoder: FirebirdDecoder = FBDecoder()
 	
-	let databaseConfiguration: FirebirdConnectionConfiguration = FirebirdConnectionConfiguration()
+	let databaseConfiguration: FirebirdConnectionConfiguration = FirebirdConnectionConfiguration(
+		target: .remote(
+			hostName: "localhost",
+			port: 3050,
+			path: "employee"),
+		parameters: [
+			.version1,
+			.username("SYSDBA"),
+			.password("SMETHING")
+		])
 	
 	let databaseId: DatabaseID = DatabaseID(string: "firebird_db")
 	
@@ -83,7 +96,8 @@ final class FirebirdFluentDriverTests: XCTAsyncTests {
 			configuration: self.databaseConfiguration,
 			maxConnectionsPerEventLoop: 1,
 			connectionPoolTimeout: .seconds(4),
-			decoder: self.decoder)
+			decoder: self.decoder,
+			logger: self.logger)
 	}
 	
 	var databases: Databases!
@@ -106,16 +120,16 @@ final class FirebirdFluentDriverTests: XCTAsyncTests {
 		self.databases.database(logger: self.logger, on: self.eventLoop)!
 	}
 	
-	func testQuery() async throws {
-		let employees = Employee
-			.query(on: self.database)
-			.all()
-		
-		employees.whenSuccess { employees in
-			employees.forEach { employee in
-				print(employee.description)
-			}
+	func testQuery() throws {
+		let employees = self.database.transaction { database in
+			Employee
+				.query(on: database)
+				.all()
 		}
+		
+		let _ = try employees.mapEach { employee in
+			print(employee.description)
+		}.wait()
 	}
 	
 }

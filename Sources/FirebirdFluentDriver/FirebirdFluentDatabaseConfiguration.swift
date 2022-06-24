@@ -9,6 +9,7 @@ import AsyncKit
 import Firebird
 import FirebirdSQL
 import FluentKit
+import Logging
 import NIO
 
 public struct FirebirdFluentDatabaseConfiguration: DatabaseConfiguration {
@@ -24,6 +25,8 @@ public struct FirebirdFluentDatabaseConfiguration: DatabaseConfiguration {
 //	public let encoder: FirebirdEncoder
 	
 	public let decoder: FirebirdDecoder
+	
+	public let logger: Logger
 		
 	public func makeDriver(for databases: Databases) -> DatabaseDriver {
 		let connectionSource = FirebirdFluentConnectionPoolSource(
@@ -32,6 +35,7 @@ public struct FirebirdFluentDatabaseConfiguration: DatabaseConfiguration {
 			source: connectionSource,
 			maxConnectionsPerEventLoop: self.maxConnectionsPerEventLoop,
 			requestTimeout: self.connectionPoolTimeout,
+			logger: self.logger,
 			on: databases.eventLoopGroup)
 		
 		return FirebirdFluentDriver(

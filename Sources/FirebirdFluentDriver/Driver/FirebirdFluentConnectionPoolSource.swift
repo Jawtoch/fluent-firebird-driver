@@ -16,7 +16,7 @@ public struct FirebirdFluentConnectionPoolSource {
 }
 
 extension FBConnection: ConnectionPoolItem {
-	
+		
 }
 
 extension FirebirdFluentConnectionPoolSource: ConnectionPoolSource {
@@ -24,11 +24,14 @@ extension FirebirdFluentConnectionPoolSource: ConnectionPoolSource {
 	public typealias Connection = FBConnection
 	
 	public func makeConnection(logger: Logger, on eventLoop: EventLoop) -> EventLoopFuture<FBConnection> {
-		eventLoop.makeSucceededFuture(
-			Connection(
-				configuration: self.configuration,
-				logger: logger,
-				on: eventLoop))
+		let connection = Connection(
+			configuration: self.configuration,
+			logger: logger,
+			on: eventLoop)
+		
+		return connection
+			.connect()
+			.map { connection }
 	}
 	
 }
