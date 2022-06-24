@@ -1,8 +1,6 @@
 import FluentKit
 import FirebirdSQL
 
-
-
 public struct FirebirdDatabaseOutput: DatabaseOutput {
 	
 	public let row: FirebirdSQLRow
