@@ -75,8 +75,6 @@ final class FirebirdFluentDriverTests: XCTAsyncTests {
 		return _logger
 	}
 	
-	let decoder: FirebirdDecoder = FBDecoder()
-	
 	let databaseConfiguration: FirebirdConnectionConfiguration = FirebirdConnectionConfiguration(
 		target: .remote(
 			hostName: "localhost",
@@ -96,7 +94,6 @@ final class FirebirdFluentDriverTests: XCTAsyncTests {
 			configuration: self.databaseConfiguration,
 			maxConnectionsPerEventLoop: 1,
 			connectionPoolTimeout: .seconds(4),
-			decoder: self.decoder,
 			logger: self.logger)
 	}
 	
@@ -121,15 +118,17 @@ final class FirebirdFluentDriverTests: XCTAsyncTests {
 	}
 	
 	func testQuery() throws {
-		let employees = self.database.transaction { database in
-			Employee
-				.query(on: database)
-				.all()
-		}
+		let employee = try Employee
+			.query(on: database)
+			.filter(\.$id, .equal, Int16(9))
+			.all()
+			.map { $0.first }
+			.wait()
 		
-		let _ = try employees.mapEach { employee in
-			print(employee.description)
-		}.wait()
+		XCTAssertNotNil(employee)
+		
+		XCTAssertEqual(employee!.id, 9)
+		XCTAssertEqual(employee!.firstName, "Phil")
 	}
 	
 }

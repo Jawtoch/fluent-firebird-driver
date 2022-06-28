@@ -13,16 +13,16 @@ public struct FirebirdFluentDatabase {
 	
 	public var converterDelegate: SQLConverterDelegate = FirebirdSQLConverterDelegate()
 	
-	public var decoder: FirebirdDecoder
+//	public var decoder: FirebirdDecoder
 }
 
 private extension FirebirdFluentDatabase {
 	
 	func execute(sql query: SQLExpression, onOutput: @escaping (DatabaseOutput) -> ()) -> EventLoopFuture<Void> {
-		let sqlDatabase = self.database.sql(decoder: self.decoder)
+		let sqlDatabase = self.database.sql()
 		
 		return sqlDatabase.execute(sql: query) { row in
-			guard let sqlRow = row as? FirebirdSQLRow else {
+			guard let sqlRow = row as? FirebirdRow else {
 				return
 			}
 			
@@ -32,9 +32,7 @@ private extension FirebirdFluentDatabase {
 	}
 	
 	func execute(sql query: SQLExpression) -> EventLoopFuture<Void> {
-		let sqlDatabase = self.database.sql(decoder: self.decoder)
-		
-		return sqlDatabase.execute(sql: query) { _ in }
+		self.execute(sql: query) { _ in }
 	}
 	
 }
@@ -42,6 +40,7 @@ private extension FirebirdFluentDatabase {
 extension FirebirdFluentDatabase: Database {
 		
 	public func execute(query: DatabaseQuery, onOutput: @escaping (DatabaseOutput) -> ()) -> EventLoopFuture<Void> {
+		
 		let converter = SQLQueryConverter(delegate: self.converterDelegate)
 		let expression = converter.convert(query)
 		
@@ -63,8 +62,7 @@ extension FirebirdFluentDatabase: Database {
 		self.database.withConnection { database in
 			let db = FirebirdFluentDatabase(database: database,
 											context: self.context,
-											inTransaction: self.inTransaction,
-											decoder: self.decoder)
+											inTransaction: self.inTransaction)
 			return closure(db)
 		}
 	}
@@ -73,8 +71,7 @@ extension FirebirdFluentDatabase: Database {
 		self.database.withTransaction { database in
 			let db = FirebirdFluentDatabase(database: database,
 											context: self.context,
-											inTransaction: true,
-											decoder: self.decoder)
+											inTransaction: true)
 			return closure(db)
 		}
 	}

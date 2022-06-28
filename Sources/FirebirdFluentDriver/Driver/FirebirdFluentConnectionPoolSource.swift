@@ -38,9 +38,9 @@ extension FirebirdFluentConnectionPoolSource: ConnectionPoolSource {
 
 extension EventLoopConnectionPool: FirebirdDatabase where Source == FirebirdFluentConnectionPoolSource {
 	
-	public func query(_ query: String) -> EventLoopFuture<[FirebirdRow]> {
+	public func query(_ query: String, binds: [FirebirdDataConvertible]) -> EventLoopFuture<[FirebirdRow]> {
 		self.withConnection { (database: FirebirdDatabase) in
-			database.query(query)
+			database.query(query, binds: binds)
 		}
 	}
 	

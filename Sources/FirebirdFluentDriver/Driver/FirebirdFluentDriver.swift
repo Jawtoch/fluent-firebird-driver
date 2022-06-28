@@ -12,16 +12,13 @@ import FluentKit
 public struct FirebirdFluentDriver: DatabaseDriver {
 		
 	public let connectionPool: EventLoopGroupConnectionPool<FirebirdFluentConnectionPoolSource>
-	
-	public let decoder: FirebirdDecoder
 		
 	public func makeDatabase(with context: DatabaseContext) -> Database {
 		let pool = self.connectionPool.pool(for: context.eventLoop)
 
 		return FirebirdFluentDatabase(database: pool,
 									  context: context,
-									  inTransaction: false,
-									  decoder: self.decoder)
+									  inTransaction: false)
 	}
 	
 	public func shutdown() {

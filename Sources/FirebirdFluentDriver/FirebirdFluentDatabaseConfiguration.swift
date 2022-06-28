@@ -24,7 +24,7 @@ public struct FirebirdFluentDatabaseConfiguration: DatabaseConfiguration {
 	
 //	public let encoder: FirebirdEncoder
 	
-	public let decoder: FirebirdDecoder
+//	public let decoder: FirebirdDecoder
 	
 	public let logger: Logger
 		
@@ -39,8 +39,7 @@ public struct FirebirdFluentDatabaseConfiguration: DatabaseConfiguration {
 			on: databases.eventLoopGroup)
 		
 		return FirebirdFluentDriver(
-			connectionPool: pool,
-			decoder: self.decoder)
+			connectionPool: pool)
 	}
 	
 }
