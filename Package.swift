@@ -1,4 +1,5 @@
-// swift-tools-version:5.3
+// swift-tools-version:5.2.0
+
 import PackageDescription
 
 let package = Package(
@@ -12,19 +13,31 @@ let package = Package(
             targets: ["FluentFirebirdDriver"]),
     ],
     dependencies: [
-		.package(url: "https://github.com/vapor/fluent-kit.git", from: "1.0.0"),
-		.package(url: "https://github.com/Jawtoch/firebird-kit.git", .upToNextMajor(from: "0.0.0")),
+		.package(
+			url: "https://github.com/ugocottin/firebird-kit.git",
+			from: "1.0.0"),
+		.package(
+			url: "https://github.com/vapor/fluent-kit.git",
+			from: "1.27.0"),
     ],
     targets: [
-        .target(
-            name: "FluentFirebirdDriver",
-            dependencies: [
-				.product(name: "FluentKit", package: "fluent-kit"),
-				.product(name: "FluentSQL", package: "fluent-kit"),
-				.product(name: "FirebirdKit", package: "firebird-kit"),
+		.target(
+			name: "FluentFirebirdDriver",
+			dependencies: [
+				.product(
+					name: "FirebirdSQL",
+					package: "firebird-kit"),
+				.product(
+					name: "FluentKit",
+					package: "fluent-kit"),
+				.product(
+					name: "FluentSQL",
+					package: "fluent-kit"),
 			]),
-        .testTarget(
-            name: "FluentFirebirdDriverTests",
-            dependencies: ["FluentFirebirdDriver"]),
+		.testTarget(
+			name: "FluentFirebirdDriverTests",
+			dependencies: [
+				.target(name: "FluentFirebirdDriver"),
+			]),
     ]
 )

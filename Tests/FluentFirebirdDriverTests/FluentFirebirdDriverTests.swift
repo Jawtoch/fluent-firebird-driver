@@ -1,122 +1,134 @@
+import AsyncKit
+import FluentKit
+import Logging
+import NIO
 import XCTest
-@testable import FluentFirebirdDriver
 
-final class FluentFirebirdDriverTests: XCTestCase {
+@testable import FluentFirebirdDriver
+import Firebird
+import FirebirdSQL
+
+class XCTAsyncTests: XCTestCase {
 	
-	private static let logger: Logger = .init(label: "testing.firebird")
+	static var eventLoopGroup: EventLoopGroup!
 	
-	// MARK: - Connection parameters
-	private static var hostname: String {
-		guard let hostname = ProcessInfo.processInfo.environment["FB_TEST_HOSTNAME"] else {
-			fatalError("FB_TEST_HOSTNAME is not defined")
-		}
-		
-		return hostname
+	static var threadPool: NIOThreadPool!
+	
+	class func setupEventLoopGroup() {
+		self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+		self.threadPool = NIOThreadPool(numberOfThreads: System.coreCount)
 	}
 	
-	private static var port: UInt16? {
-		guard let port = ProcessInfo.processInfo.environment["FB_TEST_PORT"] else { return nil }
-		
-		return UInt16(port)
-	}
-	
-	private static var username: String {
-		guard let username = ProcessInfo.processInfo.environment["FB_TEST_USERNAME"] else {
-			fatalError("FB_TEST_USERNAME is not defined")
-		}
-		
-		return username
-	}
-	
-	private static var password: String {
-		guard let password = ProcessInfo.processInfo.environment["FB_TEST_PASSWORD"] else {
-			fatalError("FB_TEST_PASSWORD is not defined")
-		}
-		
-		return password
-	}
-	
-	private static var database_name: String {
-		guard let database = ProcessInfo.processInfo.environment["FB_TEST_DATABASE"] else {
-			fatalError("FB_TEST_DATABASE is not defined")
-		}
-		
-		return database
-	}
-	
-	private static var configuration: FirebirdConnectionConfiguration {
-		.init(
-			hostname: self.hostname,
-			port: self.port,
-			username: self.username,
-			password: self.password,
-			database: self.database_name)
-	}
-	
-	
-	// MARK: - Threads
-	private static let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-	
-	private static let threadGroup = NIOThreadPool(numberOfThreads: 1)
-	
-	override class func tearDown() {
-		self.databases.shutdown()
+	class func tearDownEventLoopGroup() {
 		try! self.eventLoopGroup.syncShutdownGracefully()
-		try! self.threadGroup.syncShutdownGracefully()
+		try! self.threadPool.syncShutdownGracefully()
+		self.eventLoopGroup = nil
 	}
-	
-	// MARK: - Databases
-	private static var databases: Databases!
 	
 	override class func setUp() {
-		self.databases = Databases(threadPool: self.threadGroup, on: self.eventLoopGroup)
-		self.databases.use(.firebird(self.configuration), as: .fbsql)
+		self.setupEventLoopGroup()
 	}
 	
-	private var database: Database {
-		Self.databases.database(.fbsql, logger: Self.logger, on: Self.eventLoopGroup.next())!
+	override class func tearDown() {
+		self.tearDownEventLoopGroup()
 	}
 	
-	func testConnect() throws {
-		let _ = try database.withConnection { $0.eventLoop.makeSucceededFuture($0) }.wait()
+	var eventLoopGroup: EventLoopGroup {
+		Self.eventLoopGroup
+	}
+	
+	var eventLoop: EventLoop {
+		self.eventLoopGroup.next()
+	}
+	
+	var threadPool: NIOThreadPool {
+		Self.threadPool
+	}
+	
+}
+
+fileprivate final class Employee: Model, CustomStringConvertible {
+	
+	typealias IDValue = Int16
+	
+	static var schema: String = "EMPLOYEE"
+	
+	@ID(custom: "EMP_NO")
+	var id: IDValue?
+	
+	@Field(key: "FIRST_NAME")
+	var firstName: String
+	
+	@Field(key: "LAST_NAME")
+	var lastName: String
+	
+	var description: String {
+		"ID \(self.id ?? -1) - \(self.firstName) \(self.lastName)"
+	}
+}
+
+final class FluentFirebirdDriverTests: XCTAsyncTests {
+	
+	var logger: Logger {
+		var _logger = Logger(label: "firebirdfluentdriver.tests")
+		_logger.logLevel = .trace
+		return _logger
+	}
+	
+	let databaseConfiguration: FirebirdConnectionConfiguration = FirebirdConnectionConfiguration(
+		target: .remote(
+			hostName: "localhost",
+			port: 3050,
+			path: "employee"),
+		parameters: [
+			.version1,
+			.username("SYSDBA"),
+			.password("SMETHING")
+		])
+	
+	let databaseId: DatabaseID = DatabaseID(string: "firebird_db")
+	
+	var fluentDatabaseConfiguration: DatabaseConfiguration {
+		FirebirdDatabaseConfiguration(
+			middleware: [],
+			configuration: self.databaseConfiguration,
+			maxConnectionsPerEventLoop: 1,
+			connectionPoolTimeout: .seconds(4),
+			logger: self.logger)
+	}
+	
+	var databases: Databases!
+	
+	override func setUp() {
+		super.setUp()
+		
+		let databases = Databases(threadPool: self.threadPool, on: self.eventLoopGroup)
+		databases.use(self.fluentDatabaseConfiguration, as: self.databaseId, isDefault: true)
+		
+		self.databases = databases
+	}
+	
+	override func tearDown() {
+		self.databases.shutdown()
+		self.databases = nil
+	}
+	
+	var database: Database {
+		self.databases.database(logger: self.logger, on: self.eventLoop)!
 	}
 	
 	func testQuery() throws {
-		let employees = try self.database.query(Employee.self).all().wait()
-		XCTAssertEqual(employees.count, 42)
-	}
-	
-	func testQueryWithParameters() throws {
-		let employee = try self.database.query(Employee.self)
-			.filter(\.$id, .equal, 121)
+		let employee = try Employee
+			.query(on: database)
+			.filter(\.$id, .equal, Int16(9))
 			.all()
 			.map { $0.first }
-			.unwrap(orError: FirebirdCustomError("not found"))
 			.wait()
-		XCTAssertEqual(employee.firstName, "Roberto")
+		
+		XCTAssertNotNil(employee)
+		
+		XCTAssertEqual(employee!.id, 9)
+		XCTAssertEqual(employee!.firstName, "Phil")
 	}
-	
-	static var allTests = [
-		("testConnect", testConnect),
-		("testQuery", testQuery),
-		("testQueryWithParameters", testQueryWithParameters)
-	]
-}
-
-class Employee: Model {
-	typealias IDValue = Int16
-	
-	static var schema: String = "employee"
-
-	@ID(custom: "emp_no")
-	var id: IDValue?
-	
-	@Field(key: "first_name")
-	var firstName: String
-	
-	@Field(key: "last_name")
-	var lastName: String
-	
-	required init() { }
 	
 }
