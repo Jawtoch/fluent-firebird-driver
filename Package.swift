@@ -3,13 +3,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "FluentFirebirdDriver",
+    name: "fluent-firebird-driver",
     platforms: [
         .macOS(.v10_15),
     ],
     products: [
-        .library(name: "FirebirdFluentDriver",
-                 targets: ["FirebirdFluentDriver"]),
+        .library(name: "FluentFirebirdDriver",
+                 targets: ["FluentFirebirdDriver"]),
     ],
     dependencies: [
         .package(url: "https://github.com/ugocottin/firebird-kit.git",
@@ -18,7 +18,7 @@ let package = Package(
                  from: "1.27.0"),
     ],
     targets: [
-        .target(name: "FirebirdFluentDriver",
+        .target(name: "FluentFirebirdDriver",
                 dependencies: [
                     .product(name: "FirebirdSQL",
                              package: "firebird-kit"),
