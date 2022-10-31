@@ -1,43 +1,31 @@
-// swift-tools-version:5.2.0
+// swift-tools-version:5.1.0
 
 import PackageDescription
 
 let package = Package(
-    name: "FirebirdFluentDriver",
-	platforms: [
-		.macOS(.v10_15),
-	],
+    name: "FluentFirebirdDriver",
+    platforms: [
+        .macOS(.v10_15),
+    ],
     products: [
-        .library(
-            name: "FirebirdFluentDriver",
-            targets: ["FirebirdFluentDriver"]),
+        .library(name: "FirebirdFluentDriver",
+                 targets: ["FirebirdFluentDriver"]),
     ],
     dependencies: [
-		.package(
-			url: "https://github.com/ugocottin/FirebirdSQL.git",
-			from: "0.1.0"),
-		.package(
-			url: "https://github.com/vapor/fluent-kit.git",
-			from: "1.27.0"),
+        .package(url: "https://github.com/ugocottin/firebird-kit.git",
+                 from: "2.0.1"),
+        .package(url: "https://github.com/vapor/fluent-kit.git",
+                 from: "1.27.0"),
     ],
     targets: [
-        .target(
-            name: "FirebirdFluentDriver",
-            dependencies: [
-				.product(
-					name: "FirebirdSQL",
-					package: "FirebirdSQL"),
-				.product(
-					name: "FluentKit",
-					package: "fluent-kit"),
-				.product(
-					name: "FluentSQL",
-					package: "fluent-kit"),
-			]),
-        .testTarget(
-            name: "FirebirdFluentDriverTests",
-            dependencies: [
-				.target(name: "FirebirdFluentDriver"),
-			]),
+        .target(name: "FirebirdFluentDriver",
+                dependencies: [
+                    .product(name: "FirebirdSQL",
+                             package: "firebird-kit"),
+                    .product(name: "FluentKit",
+                             package: "fluent-kit"),
+                    .product(name: "FluentSQL",
+                             package: "fluent-kit"),
+                ]),
     ]
 )
